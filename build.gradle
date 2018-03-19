@@ -32,6 +32,7 @@ dependencies {
     compile "hsqldb:hsqldb:$hsqldb_version"
     compile "org.hibernate:hibernate-core:$hibernate_version"
     compile "org.hibernate:hibernate-entitymanager:$hibernate_version"
+    runtime "javax.xml.bind:jaxb-api:2.3.0"
 }
 
 buildscript {
