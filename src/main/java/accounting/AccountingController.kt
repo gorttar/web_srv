@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController
 import java.math.BigDecimal
 import java.math.BigInteger
 import java.util.concurrent.atomic.AtomicLong
+import javax.persistence.EntityManager
 import javax.persistence.Persistence.createEntityManagerFactory
 
 const val accountingUnitName = "accountingUnit"
@@ -35,35 +36,7 @@ class AccountingController {
                     arguments, FAILURE,
                     "Can't $operation negative amount of money")
         } else {
-            sessionManager.withTransaction {
-                val accountIterator = it
-                        .createQuery("select a from Account a where a.id = :accountId", Account::class.java)
-                        .setParameter("accountId", accountId)
-                        .resultList
-                        .iterator()
-
-                if (accountIterator.hasNext()) {
-                    val account = accountIterator.next()
-                    if (account.balance < amount) {
-                        AccountingResponse(
-                                operation,
-                                arguments, FAILURE,
-                                "We need more gold")
-                    } else {
-                        account.balance = account.balance - amount
-                        it.merge(account)
-                        AccountingResponse(
-                                operation,
-                                arguments, SUCCESS,
-                                "Ok")
-                    }
-                } else {
-                    AccountingResponse(
-                            operation,
-                            arguments, FAILURE,
-                            "Account not found")
-                }
-            }
+            sessionManager.withTransaction { it.doWithdraw(accountId, amount, operation, arguments) }
         }
     }
 
@@ -78,26 +51,7 @@ class AccountingController {
                     arguments, FAILURE,
                     "Can't $operation negative amount of money")
         } else {
-            sessionManager.withTransaction {
-                val accountIterator = it
-                        .createQuery("select a from Account a where a.id = :accountId", Account::class.java)
-                        .setParameter("accountId", accountId)
-                        .resultList
-                        .iterator()
-
-                if (accountIterator.hasNext()) {
-                    val account = accountIterator.next()
-                    account.balance = account.balance + amount
-                    it.merge(account)
-                } else {
-                    it.persist(Account(accountId, amount))
-                }
-
-                AccountingResponse(
-                        operation,
-                        arguments, SUCCESS,
-                        "Ok")
-            }
+            sessionManager.withTransaction { it.doDeposit(accountId, amount, operation, arguments) }
         }
     }
 
@@ -106,3 +60,61 @@ class AccountingController {
                  @RequestParam recipientId: BigInteger,
                  @RequestParam amount: BigDecimal): AccountingResponse = TODO()
 }
+
+private fun EntityManager.doWithdraw(accountId: BigInteger,
+                                     amount: BigDecimal,
+                                     operation: String,
+                                     arguments: Map<String, Any>): AccountingResponse {
+    val accountIterator = this
+            .createQuery("select a from Account a where a.id = :accountId", Account::class.java)
+            .setParameter("accountId", accountId)
+            .resultList
+            .iterator()
+
+    return if (accountIterator.hasNext()) {
+        val account = accountIterator.next()
+        if (account.balance < amount) {
+            AccountingResponse(
+                    operation,
+                    arguments, FAILURE,
+                    "We need more gold")
+        } else {
+            account.balance = account.balance - amount
+            this.merge(account)
+            AccountingResponse(
+                    operation,
+                    arguments, SUCCESS,
+                    "Ok")
+        }
+    } else {
+        AccountingResponse(
+                operation,
+                arguments, FAILURE,
+                "Account not found")
+    }
+}
+
+private fun EntityManager.doDeposit(accountId: BigInteger,
+                                    amount: BigDecimal,
+                                    operation: String,
+                                    arguments: Map<String, Any>): AccountingResponse {
+    val accountIterator = this
+            .createQuery("select a from Account a where a.id = :accountId", Account::class.java)
+            .setParameter("accountId", accountId)
+            .resultList
+            .iterator()
+
+    if (accountIterator.hasNext()) {
+        val account = accountIterator.next()
+        account.balance = account.balance + amount
+        this.merge(account)
+    } else {
+        this.persist(Account(accountId, amount))
+    }
+
+    return AccountingResponse(
+            operation,
+            arguments, SUCCESS,
+            "Ok")
+}
+
