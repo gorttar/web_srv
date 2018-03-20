@@ -79,12 +79,7 @@ class AccountingControllerTest {
         assertEquals(message, expectedMessage)
 
         if (expectedBalance != null) {
-            val actualBalance = accountingSM.withSession {
-                it.createQuery("select a.balance from Account a where a.id = :accountId", BigDecimal::class.java)
-                        .setParameter("accountId", accountId)
-                        .singleResult
-            }
-            assertEquals(actualBalance.toDouble(), expectedBalance.toDouble(), 1e-6)
+            assertEquals(getAccountBalance(accountId).toDouble(), expectedBalance.toDouble(), 1e-6)
         }
     }
 
@@ -123,15 +118,71 @@ class AccountingControllerTest {
         assertEquals(result, expectedResult)
         assertEquals(message, expectedMessage)
 
-        val actualBalance = accountingSM.withSession {
-            it.createQuery("select a.balance from Account a where a.id = :accountId", BigDecimal::class.java)
-                    .setParameter("accountId", accountId)
-                    .singleResult
-        }
-        assertEquals(actualBalance.toDouble(), expectedBalance.toDouble(), 1e-6)
+        assertEquals(getAccountBalance(accountId).toDouble(), expectedBalance.toDouble(), 1e-6)
     }
 
-    @Test
-    fun testTransfer() {
+    @DataProvider(name = "data for testTransfer")
+    fun `data for testTransfer`() = arrayOf(
+            // positive cases
+            // zero transfer
+            arrayOf(account1Id, account2Id, BigDecimal.ZERO, SUCCESS, "Ok", account1Balance, account2Balance),
+            arrayOf(account2Id, account1Id, BigDecimal.ZERO, SUCCESS, "Ok", account2Balance, account1Balance),
+            // non zero transfer
+            arrayOf(account2Id, account1Id,
+                    BigDecimal.ONE,
+                    SUCCESS, "Ok",
+                    account2Balance - BigDecimal.ONE, account1Balance + BigDecimal.ONE),
+            arrayOf(account2Id, account1Id,
+                    BigDecimal.TEN,
+                    SUCCESS, "Ok",
+                    account2Balance - BigDecimal.TEN, account1Balance + BigDecimal.TEN),
+            // full transfer
+            arrayOf(account2Id, account1Id,
+                    account2Balance,
+                    SUCCESS, "Ok", BigDecimal.ZERO,
+                    account1Balance + account2Balance),
+
+            // negative cases
+            // account not found
+            arrayOf(BigInteger.ZERO, account1Id,
+                    BigDecimal.ZERO,
+                    FAILURE, "Account not found",
+                    null, account1Balance),
+            // transfer more than sender balance
+            arrayOf(account2Id, account1Id,
+                    account2Balance + BigDecimal.ONE,
+                    FAILURE, "We need more gold",
+                    account2Balance, account1Balance),
+            // transfer negative amount
+            arrayOf(account2Id, account1Id,
+                    BigDecimal.valueOf(-1),
+                    FAILURE, "Can't withdraw negative amount of money",
+                    account2Balance, account1Balance))
+
+    @Test(dataProvider = "data for testTransfer")
+    fun testTransfer(senderId: BigInteger,
+                     recipientId: BigInteger,
+                     amount: BigDecimal,
+                     expectedResult: OperationResult,
+                     expectedMessage: String,
+                     expectedSenderBalance: BigDecimal?,
+                     expectedRecipientBalance: BigDecimal) {
+        val (operation, arguments, result, message) = testObject.transfer(senderId, recipientId, amount)
+
+        assertEquals(operation, "withdraw")
+        assertEquals(arguments, mapOf("senderId" to senderId, "recipientId" to recipientId, "amount" to amount))
+        assertEquals(result, expectedResult)
+        assertEquals(message, expectedMessage)
+
+        assertEquals(getAccountBalance(recipientId).toDouble(), expectedRecipientBalance.toDouble(), 1e-6)
+        if (expectedSenderBalance != null) {
+            assertEquals(getAccountBalance(senderId).toDouble(), expectedSenderBalance.toDouble(), 1e-6)
+        }
     }
+}
+
+private fun getAccountBalance(accountId: BigInteger) = accountingSM.withSession {
+    it.createQuery("select a.balance from Account a where a.id = :accountId", BigDecimal::class.java)
+            .setParameter("accountId", accountId)
+            .singleResult
 }
