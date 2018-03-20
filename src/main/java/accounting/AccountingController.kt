@@ -58,7 +58,31 @@ class AccountingController {
     @RequestMapping("/transfer", method = [POST])
     fun transfer(@RequestParam senderId: BigInteger,
                  @RequestParam recipientId: BigInteger,
-                 @RequestParam amount: BigDecimal): AccountingResponse = TODO()
+                 @RequestParam amount: BigDecimal): AccountingResponse {
+        val operation = "transfer"
+        val arguments = mapOf("senderId" to senderId, "recipientId" to recipientId, "amount" to amount)
+        return if (amount < BigDecimal.ZERO) {
+            AccountingResponse(
+                    operation,
+                    arguments, FAILURE,
+                    "Can't $operation negative amount of money")
+        } else {
+            class TransactionException(val response: AccountingResponse) : Exception()
+
+            fun AccountingResponse.breakTransactionOnFailure() =
+                    if (this.result != SUCCESS) throw TransactionException(this)
+                    else this
+
+            try {
+                sessionManager.withTransaction {
+                    it.doWithdraw(senderId, amount, operation, arguments).breakTransactionOnFailure()
+                    it.doDeposit(recipientId, amount, operation, arguments).breakTransactionOnFailure()
+                }
+            } catch (e: TransactionException) {
+                e.response
+            }
+        }
+    }
 }
 
 private fun EntityManager.doWithdraw(accountId: BigInteger,

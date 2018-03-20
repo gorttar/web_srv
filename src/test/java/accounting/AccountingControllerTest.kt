@@ -156,7 +156,7 @@ class AccountingControllerTest {
             // transfer negative amount
             arrayOf(account2Id, account1Id,
                     BigDecimal.valueOf(-1),
-                    FAILURE, "Can't withdraw negative amount of money",
+                    FAILURE, "Can't transfer negative amount of money",
                     account2Balance, account1Balance))
 
     @Test(dataProvider = "data for testTransfer")
@@ -169,7 +169,7 @@ class AccountingControllerTest {
                      expectedRecipientBalance: BigDecimal) {
         val (operation, arguments, result, message) = testObject.transfer(senderId, recipientId, amount)
 
-        assertEquals(operation, "withdraw")
+        assertEquals(operation, "transfer")
         assertEquals(arguments, mapOf("senderId" to senderId, "recipientId" to recipientId, "amount" to amount))
         assertEquals(result, expectedResult)
         assertEquals(message, expectedMessage)
