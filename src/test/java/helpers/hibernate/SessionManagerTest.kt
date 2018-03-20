@@ -6,21 +6,21 @@ import org.testng.annotations.AfterClass
 import org.testng.annotations.BeforeMethod
 import org.testng.annotations.Test
 import javax.persistence.EntityManager
-import javax.persistence.Persistence
+import javax.persistence.Persistence.createEntityManagerFactory
 
 /**
  * @author Andrey Antipov (gorttar@gmail.com) (2017-02-28)
  */
 
-private val testPersistence = Persistence.createEntityManagerFactory("testPersistence")
-private val testObject = SessionManager(testPersistence)
+private val testEMF = createEntityManagerFactory("testPersistence")
+private val testObject = SessionManager(testEMF)
 private val testEntity1 = TestEntity("e1")
 private const val testErrorMessage = "test error"
 
 class SessionManagerTest {
     @BeforeMethod
     fun setUp() {
-        val em = testPersistence.createEntityManager()
+        val em = testEMF.createEntityManager()
         try {
             val tx = em.transaction
             tx.begin()
@@ -33,7 +33,7 @@ class SessionManagerTest {
     }
 
     @AfterClass
-    fun tearDown() = testPersistence.close()
+    fun tearDown() = testEMF.close()
 
     @Test
     fun `withTransaction should successfully persist new entity and close entity manager`() {
@@ -44,7 +44,7 @@ class SessionManagerTest {
             it.persist(testEntity)
         }
         assertEquals(
-                testPersistence.createEntityManager().createQuery("select e from TestEntity e order by e.name", TestEntity::class.java).resultList,
+                testEMF.createEntityManager().createQuery("select e from TestEntity e order by e.name", TestEntity::class.java).resultList,
                 listOf(testEntity1, testEntity))
         assertFalse(exposedEm!!.isOpen)
     }
@@ -65,7 +65,7 @@ class SessionManagerTest {
         } catch (e: TestException) {
             assertEquals(e.message, testErrorMessage)
             assertEquals(
-                    testPersistence.createEntityManager().createQuery("select e from TestEntity e", TestEntity::class.java).resultList,
+                    testEMF.createEntityManager().createQuery("select e from TestEntity e", TestEntity::class.java).resultList,
                     listOf(testEntity1))
             assertEquals(
                     actual,

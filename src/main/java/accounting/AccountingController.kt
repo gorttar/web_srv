@@ -13,7 +13,7 @@ import javax.persistence.Persistence.createEntityManagerFactory
 @RestController
 class AccountingController {
     private val counter = AtomicLong()
-    private val sessionManager = SessionManager(createEntityManagerFactory("accounting"))
+    private val sessionManager = SessionManager(createEntityManagerFactory("accountingUnit"))
 
     @RequestMapping("/greeting")
     fun greeting(@RequestParam(defaultValue = "World") name: String) =
