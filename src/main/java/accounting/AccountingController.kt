@@ -21,14 +21,14 @@ class AccountingController {
 
     @RequestMapping("/withdraw", method = [POST])
     fun withdraw(@RequestParam accountId: BigInteger,
-                 @RequestParam amount: BigDecimal): Any = TODO()
+                 @RequestParam amount: BigDecimal): AccountingResponse = TODO()
 
     @RequestMapping("/deposit", method = [POST])
     fun deposit(@RequestParam accountId: BigInteger,
-                @RequestParam amount: BigDecimal): Any = TODO()
+                @RequestParam amount: BigDecimal): AccountingResponse = TODO()
 
     @RequestMapping("/transfer", method = [POST])
     fun transfer(@RequestParam senderId: BigInteger,
                  @RequestParam recipientId: BigInteger,
-                 @RequestParam amount: BigDecimal): Any = TODO()
+                 @RequestParam amount: BigDecimal): AccountingResponse = TODO()
 }
