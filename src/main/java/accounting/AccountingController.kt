@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.RequestMethod.POST
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import java.math.BigDecimal
+import java.math.BigInteger
 import java.util.concurrent.atomic.AtomicLong
 import javax.persistence.Persistence.createEntityManagerFactory
 
@@ -19,15 +20,15 @@ class AccountingController {
             Greeting(counter.incrementAndGet(), "Hello, $name")
 
     @RequestMapping("/withdraw", method = [POST])
-    fun withdraw(@RequestParam accountId: String,
+    fun withdraw(@RequestParam accountId: BigInteger,
                  @RequestParam amount: BigDecimal): Any = TODO()
 
     @RequestMapping("/deposit", method = [POST])
-    fun deposit(@RequestParam accountId: String,
+    fun deposit(@RequestParam accountId: BigInteger,
                 @RequestParam amount: BigDecimal): Any = TODO()
 
     @RequestMapping("/transfer", method = [POST])
-    fun transfer(@RequestParam senderId: String,
-                 @RequestParam recipientId: String,
+    fun transfer(@RequestParam senderId: BigInteger,
+                 @RequestParam recipientId: BigInteger,
                  @RequestParam amount: BigDecimal): Any = TODO()
 }
