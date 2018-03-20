@@ -29,7 +29,6 @@ private val account2Id = BigInteger.valueOf(2)
 private val account2Balance = BigDecimal.valueOf(500)
 
 class AccountingControllerTest {
-
     @BeforeMethod
     fun setUp() = accountingSM.withTransaction {
         it.createNativeQuery("delete from Account").executeUpdate()

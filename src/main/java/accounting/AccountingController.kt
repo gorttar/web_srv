@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import java.math.BigDecimal
 import java.math.BigInteger
-import java.util.concurrent.atomic.AtomicLong
 import javax.persistence.EntityManager
 import javax.persistence.Persistence.createEntityManagerFactory
 
@@ -18,12 +17,7 @@ const val accountingUnitName = "accountingUnit"
 
 @RestController
 class AccountingController {
-    private val counter = AtomicLong()
     private val sessionManager = SessionManager(createEntityManagerFactory(accountingUnitName))
-
-    @RequestMapping("/greeting")
-    fun greeting(@RequestParam(defaultValue = "World") name: String) =
-            Greeting(counter.incrementAndGet(), "Hello, $name")
 
     @RequestMapping("/withdraw", method = [POST])
     fun withdraw(@RequestParam accountId: BigInteger,
