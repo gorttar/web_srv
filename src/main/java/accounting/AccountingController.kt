@@ -27,39 +27,41 @@ class AccountingController {
     @RequestMapping("/withdraw", method = [POST])
     fun withdraw(@RequestParam accountId: BigInteger,
                  @RequestParam amount: BigDecimal): AccountingResponse {
+        val operation = "withdraw"
         val arguments = mapOf("accountId" to accountId, "amount" to amount)
         return if (amount < BigDecimal.ZERO) {
             AccountingResponse(
-                    "withdraw",
+                    operation,
                     arguments, FAILURE,
-                    "Can't withdraw negative amount of money")
+                    "Can't $operation negative amount of money")
         } else {
             sessionManager.withTransaction {
-                val accountIterator = it.createQuery("select a from Account a where a.id = :accountId", Account::class.java)
+                val accountIterator = it
+                        .createQuery("select a from Account a where a.id = :accountId", Account::class.java)
                         .setParameter("accountId", accountId)
                         .resultList
                         .iterator()
 
-                if (!accountIterator.hasNext()) {
-                    AccountingResponse(
-                            "withdraw",
-                            arguments, FAILURE,
-                            "Account not found")
-                } else {
+                if (accountIterator.hasNext()) {
                     val account = accountIterator.next()
                     if (account.balance < amount) {
                         AccountingResponse(
-                                "withdraw",
+                                operation,
                                 arguments, FAILURE,
                                 "We need more gold")
                     } else {
                         account.balance = account.balance - amount
                         it.merge(account)
                         AccountingResponse(
-                                "withdraw",
+                                operation,
                                 arguments, SUCCESS,
                                 "Ok")
                     }
+                } else {
+                    AccountingResponse(
+                            operation,
+                            arguments, FAILURE,
+                            "Account not found")
                 }
             }
         }
@@ -67,7 +69,37 @@ class AccountingController {
 
     @RequestMapping("/deposit", method = [POST])
     fun deposit(@RequestParam accountId: BigInteger,
-                @RequestParam amount: BigDecimal): AccountingResponse = TODO()
+                @RequestParam amount: BigDecimal): AccountingResponse {
+        val operation = "deposit"
+        val arguments = mapOf("accountId" to accountId, "amount" to amount)
+        return if (amount < BigDecimal.ZERO) {
+            AccountingResponse(
+                    operation,
+                    arguments, FAILURE,
+                    "Can't $operation negative amount of money")
+        } else {
+            sessionManager.withTransaction {
+                val accountIterator = it
+                        .createQuery("select a from Account a where a.id = :accountId", Account::class.java)
+                        .setParameter("accountId", accountId)
+                        .resultList
+                        .iterator()
+
+                if (accountIterator.hasNext()) {
+                    val account = accountIterator.next()
+                    account.balance = account.balance + amount
+                    it.merge(account)
+                } else {
+                    it.persist(Account(accountId, amount))
+                }
+
+                AccountingResponse(
+                        operation,
+                        arguments, SUCCESS,
+                        "Ok")
+            }
+        }
+    }
 
     @RequestMapping("/transfer", method = [POST])
     fun transfer(@RequestParam senderId: BigInteger,
