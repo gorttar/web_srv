@@ -88,8 +88,47 @@ class AccountingControllerTest {
         }
     }
 
-    @Test
-    fun testDeposit() {
+    @DataProvider(name = "data for testDeposit")
+    fun `data for testDeposit`() = arrayOf(
+            // positive cases
+            // zero deposit
+            arrayOf(account1Id, BigDecimal.ZERO, SUCCESS, "Ok", account1Balance),
+            arrayOf(account2Id, BigDecimal.ZERO, SUCCESS, "Ok", account2Balance),
+            // non zero deposit
+            arrayOf(account1Id, BigDecimal.ONE, SUCCESS, "Ok", account1Balance + BigDecimal.ONE),
+            arrayOf(account1Id, BigDecimal.TEN, SUCCESS, "Ok", account1Balance + BigDecimal.TEN),
+            arrayOf(account2Id, BigDecimal.ONE, SUCCESS, "Ok", account2Balance + BigDecimal.ONE),
+            arrayOf(account2Id, BigDecimal.TEN, SUCCESS, "Ok", account2Balance + BigDecimal.TEN),
+            // deposit to new account
+            arrayOf(BigInteger.valueOf(3), BigDecimal.ONE, SUCCESS, "Ok", BigDecimal.ONE),
+
+            // negative cases
+            // deposit negative amount
+            arrayOf(account2Id,
+                    BigDecimal.valueOf(-1),
+                    FAILURE,
+                    "Can't deposit negative amount of money",
+                    account2Balance))
+
+    @Test(dataProvider = "data for testDeposit")
+    fun testDeposit(accountId: BigInteger,
+                    amount: BigDecimal,
+                    expectedResult: OperationResult,
+                    expectedMessage: String,
+                    expectedBalance: BigDecimal) {
+        val (operation, arguments, result, message) = testObject.deposit(accountId, amount)
+
+        assertEquals(operation, "deposit")
+        assertEquals(arguments, mapOf("accountId" to accountId, "amount" to amount))
+        assertEquals(result, expectedResult)
+        assertEquals(message, expectedMessage)
+
+        val actualBalance = accountingSM.withSession {
+            it.createQuery("select a.balance from Account a where a.id = :accountId", BigDecimal::class.java)
+                    .setParameter("accountId", accountId)
+                    .singleResult
+        }
+        assertEquals(actualBalance.toDouble(), expectedBalance.toDouble(), 1e-6)
     }
 
     @Test
