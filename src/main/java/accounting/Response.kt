@@ -1,9 +1,11 @@
 package accounting
 
 /**
- * @author Andrey Antipov (andrey.antipov@cxense.com) (2018-03-20 19:45)
+ * representation of controller's operation response
+ *
+ * @author Andrey Antipov (gorttar@gmail.com) (2018-03-20)
  */
-data class AccountingResponse(
+data class Response(
         val operation: String,
         val arguments: Map<String, Any>,
         val result: OperationResult,

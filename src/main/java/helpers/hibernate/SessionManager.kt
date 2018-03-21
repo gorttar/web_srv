@@ -1,23 +1,21 @@
-/*
- * Copyright (c) 2018 Andrey Antipov. All Rights Reserved.
- */
 package helpers.hibernate
 
 import javax.persistence.EntityManager
 import javax.persistence.EntityManagerFactory
 import javax.persistence.EntityTransaction
+import javax.transaction.Transactional
 
 /**
  * helper to deal with [EntityManager] sessions both transactional and not
+ * without using of [Transactional] annotation and interceptors
  *
  * @author Andrey Antipov (gorttar@gmail.com) (2017-02-28)
  */
 class SessionManager(private val entityManagerFactory: EntityManagerFactory) {
     /**
-     * evaluates transactional function represented by transaction body and returns it's result
-     *
-     * @param transactionBody to be evaluated under [EntityTransaction]
-     * @return transaction body evaluation result
+     * evaluates transactional function represented by [transactionBody] inside of opened [EntityTransaction] and returns it's result
+     * currently the only way to rollback transaction is to throw an exception from inside of [transactionBody]
+     * [T] - type of result
      */
     fun <T> withTransaction(transactionBody: (EntityManager) -> T): T =
             withSession {
@@ -35,10 +33,8 @@ class SessionManager(private val entityManagerFactory: EntityManagerFactory) {
 
 
     /**
-     * evaluates function represented by body and returns it's result
-     *
-     * @param body to be evaluated with [EntityManager] as argument
-     * @return body evaluation result
+     * evaluates function represented by [body] inside of opened [EntityManager] session and returns it's result
+     * [T] - type of result
      */
     fun <T> withSession(body: (EntityManager) -> T): T {
         val em = entityManagerFactory.createEntityManager()

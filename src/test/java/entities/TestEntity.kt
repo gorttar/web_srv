@@ -1,10 +1,13 @@
 package entities
 
+import helpers.hibernate.SessionManagerTest
 import javax.persistence.Entity
 import javax.persistence.Id
 
 /**
- * @author Andrey Antipov (andrey.antipov@cxense.com) (2018-03-19 18:16)
+ * simple test [Entity] used by [SessionManagerTest]
+ *
+ * @author Andrey Antipov (gorttar@gmail.com) (2018-03-19)
  */
 @Entity
 data class TestEntity(@Id var name: String?) {

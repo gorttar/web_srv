@@ -13,14 +13,10 @@ import java.math.BigDecimal
 import java.math.BigInteger
 import javax.persistence.Persistence.createEntityManagerFactory
 
-/**
- * @author Andrey Antipov (andrey.antipov@cxense.com) (2018-03-20 19:57)
- */
-
 private val accountingEMF = createEntityManagerFactory(accountingUnitName)
 private val accountingSM = SessionManager(accountingEMF)
 
-private val testObject = AccountingController()
+private val testObject = Controller()
 
 private val account1Id = BigInteger.ONE
 private val account1Balance = BigDecimal.ZERO
@@ -28,7 +24,10 @@ private val account1Balance = BigDecimal.ZERO
 private val account2Id = BigInteger.valueOf(2)
 private val account2Balance = BigDecimal.valueOf(500)
 
-class AccountingControllerTest {
+/**
+ * @author Andrey Antipov (gorttar@gmail.com) (2018-03-20)
+ */
+class ControllerTest {
     @BeforeMethod
     fun setUp() = accountingSM.withTransaction {
         it.createNativeQuery("delete from Account").executeUpdate()

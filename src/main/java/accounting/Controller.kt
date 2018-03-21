@@ -15,17 +15,29 @@ import javax.persistence.Persistence.createEntityManagerFactory
 
 const val accountingUnitName = "accountingUnit"
 
+/**
+ * controller of accounting operations
+ *
+ * @author Andrey Antipov (gorttar@gmail.com) (2018-03-18)
+ */
 @RestController
-class AccountingController {
+class Controller {
     private val sessionManager = SessionManager(createEntityManagerFactory(accountingUnitName))
 
+    /**
+     * withdraw specified [amount] of money from [Account] identified by [accountId]
+     * should return [Response] with [Response.result] equals to [FAILURE] in following cases
+     * [amount] is negative
+     * there is no [Account] identified by [accountId] in database
+     * [amount] is more than [Account.balance]
+     */
     @RequestMapping("/withdraw", method = [POST])
     fun withdraw(@RequestParam accountId: BigInteger,
-                 @RequestParam amount: BigDecimal): AccountingResponse {
+                 @RequestParam amount: BigDecimal): Response {
         val operation = "withdraw"
         val arguments = mapOf("accountId" to accountId, "amount" to amount)
         return if (amount < BigDecimal.ZERO) {
-            AccountingResponse(
+            Response(
                     operation,
                     arguments, FAILURE,
                     "Can't $operation negative amount of money")
@@ -34,13 +46,19 @@ class AccountingController {
         }
     }
 
+    /**
+     * deposit specified [amount] of money to [Account] identified by [accountId]
+     * should create new [Account] with [Account.balance] = [amount] if there is no [Account] identified by [accountId] in database
+     * should return [Response] with [Response.result] equals to [FAILURE] in following cases
+     * [amount] is negative
+     */
     @RequestMapping("/deposit", method = [POST])
     fun deposit(@RequestParam accountId: BigInteger,
-                @RequestParam amount: BigDecimal): AccountingResponse {
+                @RequestParam amount: BigDecimal): Response {
         val operation = "deposit"
         val arguments = mapOf("accountId" to accountId, "amount" to amount)
         return if (amount < BigDecimal.ZERO) {
-            AccountingResponse(
+            Response(
                     operation,
                     arguments, FAILURE,
                     "Can't $operation negative amount of money")
@@ -49,21 +67,29 @@ class AccountingController {
         }
     }
 
+    /**
+     * transfer specified [amount] of money from [Account] identified by [senderId] to [Account] identified by [recipientId]
+     * should create new [Account] with [Account.balance] = [amount] if there is no [Account] identified by [recipientId] in database
+     * should return [Response] with [Response.result] equals to [FAILURE] in following cases
+     * [amount] is negative
+     * there is no [Account] identified by [senderId] in database
+     * [amount] is more than [Account.balance] on [Account] identified by [senderId]
+     */
     @RequestMapping("/transfer", method = [POST])
     fun transfer(@RequestParam senderId: BigInteger,
                  @RequestParam recipientId: BigInteger,
-                 @RequestParam amount: BigDecimal): AccountingResponse {
+                 @RequestParam amount: BigDecimal): Response {
         val operation = "transfer"
         val arguments = mapOf("senderId" to senderId, "recipientId" to recipientId, "amount" to amount)
         return if (amount < BigDecimal.ZERO) {
-            AccountingResponse(
+            Response(
                     operation,
                     arguments, FAILURE,
                     "Can't $operation negative amount of money")
         } else {
-            class TransactionException(val response: AccountingResponse) : Exception()
+            class TransactionException(val response: Response) : Exception()
 
-            fun AccountingResponse.breakTransactionOnFailure() =
+            fun Response.breakTransactionOnFailure() =
                     if (this.result != SUCCESS) throw TransactionException(this)
                     else this
 
@@ -82,7 +108,7 @@ class AccountingController {
 private fun EntityManager.doWithdraw(accountId: BigInteger,
                                      amount: BigDecimal,
                                      operation: String,
-                                     arguments: Map<String, Any>): AccountingResponse {
+                                     arguments: Map<String, Any>): Response {
     val accountIterator = this
             .createQuery("select a from Account a where a.id = :accountId", Account::class.java)
             .setParameter("accountId", accountId)
@@ -92,20 +118,20 @@ private fun EntityManager.doWithdraw(accountId: BigInteger,
     return if (accountIterator.hasNext()) {
         val account = accountIterator.next()
         if (account.balance < amount) {
-            AccountingResponse(
+            Response(
                     operation,
                     arguments, FAILURE,
                     "We need more gold")
         } else {
             account.balance = account.balance - amount
             this.merge(account)
-            AccountingResponse(
+            Response(
                     operation,
                     arguments, SUCCESS,
                     "Ok")
         }
     } else {
-        AccountingResponse(
+        Response(
                 operation,
                 arguments, FAILURE,
                 "Account not found")
@@ -115,7 +141,7 @@ private fun EntityManager.doWithdraw(accountId: BigInteger,
 private fun EntityManager.doDeposit(accountId: BigInteger,
                                     amount: BigDecimal,
                                     operation: String,
-                                    arguments: Map<String, Any>): AccountingResponse {
+                                    arguments: Map<String, Any>): Response {
     val accountIterator = this
             .createQuery("select a from Account a where a.id = :accountId", Account::class.java)
             .setParameter("accountId", accountId)
@@ -130,7 +156,7 @@ private fun EntityManager.doDeposit(accountId: BigInteger,
         this.persist(Account(accountId, amount))
     }
 
-    return AccountingResponse(
+    return Response(
             operation,
             arguments, SUCCESS,
             "Ok")

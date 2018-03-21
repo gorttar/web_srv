@@ -8,15 +8,14 @@ import org.testng.annotations.Test
 import javax.persistence.EntityManager
 import javax.persistence.Persistence.createEntityManagerFactory
 
-/**
- * @author Andrey Antipov (gorttar@gmail.com) (2017-02-28)
- */
-
 private val testEMF = createEntityManagerFactory("testPersistence")
 private val testObject = SessionManager(testEMF)
 private val testEntity1 = TestEntity("e1")
 private const val testErrorMessage = "test error"
 
+/**
+ * @author Andrey Antipov (gorttar@gmail.com) (2017-02-28)
+ */
 class SessionManagerTest {
     @BeforeMethod
     fun setUp() {
