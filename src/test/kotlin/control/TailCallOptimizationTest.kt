@@ -3,6 +3,7 @@ package control
 import org.testng.Assert.assertEquals
 import org.testng.annotations.DataProvider
 import org.testng.annotations.Test
+import kotlin.system.measureTimeMillis
 
 /**
  * @author Andrey Antipov (gorttar@gmail.com) (2018-04-09)
@@ -52,6 +53,21 @@ class TailCallOptimizationTest {
 }
 
 fun main(args: Array<String>) {
-    fun infinite(a: Unit): TCResult<Unit, Nothing> = ::infinite applyTo a
-    infinite(Unit)()
+    val recursionLimit = 1000_000_000L
+    fun deepRecursionTrampolined(a: Long): TCResult<Long, Unit> {
+        return if (a == recursionLimit) {
+            println("deepRecursionTrampolined passes $a recursive calls").ret()
+        } else ::deepRecursionTrampolined applyTo a + 1
+    }
+
+    val trampolineMillis = measureTimeMillis { deepRecursionTrampolined(1)() }
+    println("Trampolined version is executed for $trampolineMillis milliseconds")
+
+    tailrec fun deepRecursionTailrec(a: Long): Unit =
+            if (a == recursionLimit) {
+                println("deepRecursionTailrec passes $a recursive calls")
+            } else deepRecursionTailrec(a + 1)
+
+    val tailrecMillis = measureTimeMillis { deepRecursionTailrec(1) }
+    println("Tailrec version is executed for $tailrecMillis milliseconds")
 }
