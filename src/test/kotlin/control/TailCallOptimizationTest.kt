@@ -27,14 +27,10 @@ class TailCallOptimizationTest {
             arrayOf(9_999_999, false))
 
     @Test(dataProvider = "data for \"even\" tests")
-    fun `"evenM" should work properly for positive numbers`(n: Int, expected: Boolean) {
-        assertEquals(evenM(n)(), expected)
-    }
+    fun `"evenM" should work properly for positive numbers`(n: Int, expected: Boolean) = assertEquals(evenM(n)(), expected)
 
     @Test(dataProvider = "data for \"even\" tests")
-    fun `"evenF" should work properly for positive numbers`(n: Int, expected: Boolean) {
-        assertEquals(evenF(n)(), expected)
-    }
+    fun `"evenF" should work properly for positive numbers`(n: Int, expected: Boolean) = assertEquals(evenF(n)(), expected)
 
     @DataProvider
     fun `data for "odd" tests`() = `data for "even" tests`()
@@ -42,35 +38,46 @@ class TailCallOptimizationTest {
             .toTypedArray()
 
     @Test(dataProvider = "data for \"odd\" tests")
-    fun `"oddM" should work properly for positive numbers`(n: Int, expected: Boolean) {
-        assertEquals(oddM(n)(), expected)
-    }
+    fun `"oddM" should work properly for positive numbers`(n: Int, expected: Boolean) = assertEquals(oddM(n)(), expected)
 
     @Test(dataProvider = "data for \"odd\" tests")
-    fun `"oddF" should work properly for positive numbers`(n: Int, expected: Boolean) {
-        assertEquals(oddF(n)(), expected)
+    fun `"oddF" should work properly for positive numbers`(n: Int, expected: Boolean) = assertEquals(oddF(n)(), expected)
+
+    private val recursionLimit = 1000_000_000L
+    private val deepRecursionTrampolinedF: TCFunction<Long, Unit> = {
+        if (it == recursionLimit) {
+            println("deepRecursionTrampolinedF passes $it recursive calls").ret()
+        } else {
+            deepRecursionTrampolinedFAlias applyTo it + 1
+        }
     }
+    private val deepRecursionTrampolinedFAlias: TCFunction<Long, Unit> = deepRecursionTrampolinedF
+
+    private fun deepRecursionTrampolinedM(it: Long): TCResult<Long, Unit> =
+            if (it == recursionLimit) {
+                println("deepRecursionTrampolinedF passes $it recursive calls").ret()
+            } else {
+                deepRecursionTrampolinedMAlias applyTo it + 1
+            }
+
+    private val deepRecursionTrampolinedMAlias: TCFunction<Long, Unit> = ::deepRecursionTrampolinedM
 
     @Test
     fun `benchmark test`() {
-        val recursionLimit = 1000_000_000L
-        fun deepRecursionTrampolined(a: Long): TCResult<Long, Unit> {
-            return if (a == recursionLimit) {
-                println("deepRecursionTrampolined passes $a recursive calls").ret()
-            } else ::deepRecursionTrampolined applyTo a + 1
-        }
+        val trampolineFMillis = measureTimeMillis { deepRecursionTrampolinedF(1)() }
+        println("Trampolined function based version is executed for $trampolineFMillis milliseconds")
 
-        val trampolineMillis = measureTimeMillis { deepRecursionTrampolined(1)() }
-        println("Trampolined version is executed for $trampolineMillis milliseconds")
+        val trampolineMMillis = measureTimeMillis { deepRecursionTrampolinedM(1)() }
+        println("Trampolined method based version is executed for $trampolineMMillis milliseconds")
 
         tailrec fun deepRecursionTailrec(a: Long): Unit =
                 if (a == recursionLimit) {
                     println("deepRecursionTailrec passes $a recursive calls")
                 } else deepRecursionTailrec(a + 1)
-
         val tailrecMillis = measureTimeMillis { deepRecursionTailrec(1) }
         println("Tailrec version is executed for $tailrecMillis milliseconds")
-        println("Tailrec version is ${trampolineMillis.toDouble() / tailrecMillis} times faster than trampolined one")
+        println("Tailrec version is ${trampolineFMillis.toDouble() / tailrecMillis} times faster than trampolined function based one")
+        println("Tailrec version is ${trampolineMMillis.toDouble() / tailrecMillis} times faster than trampolined method based one")
 
         val iterationMillis = measureTimeMillis {
             var a: Long = 1
