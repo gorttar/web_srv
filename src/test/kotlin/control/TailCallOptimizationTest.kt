@@ -70,6 +70,16 @@ class TailCallOptimizationTest {
 
         val tailrecMillis = measureTimeMillis { deepRecursionTailrec(1) }
         println("Tailrec version is executed for $tailrecMillis milliseconds")
-        println("Tailrec version is ${trampolineMillis / tailrecMillis} times faster than trampolined one")
+        println("Tailrec version is ${trampolineMillis.toDouble() / tailrecMillis} times faster than trampolined one")
+
+        val iterationMillis = measureTimeMillis {
+            var a: Long = 1
+            while (a != recursionLimit) {
+                a++
+            }
+            println("$a iterations passed")
+        }
+        println("Iteration version is executed for $iterationMillis milliseconds")
+        println("Iteration version is ${tailrecMillis.toDouble() / iterationMillis} times faster than tailrec one")
     }
 }
