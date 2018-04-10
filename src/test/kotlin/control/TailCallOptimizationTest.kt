@@ -50,24 +50,26 @@ class TailCallOptimizationTest {
     fun `"oddF" should work properly for positive numbers`(n: Int, expected: Boolean) {
         assertEquals(oddF(n)(), expected)
     }
-}
 
-fun main(args: Array<String>) {
-    val recursionLimit = 1000_000_000L
-    fun deepRecursionTrampolined(a: Long): TCResult<Long, Unit> {
-        return if (a == recursionLimit) {
-            println("deepRecursionTrampolined passes $a recursive calls").ret()
-        } else ::deepRecursionTrampolined applyTo a + 1
+    @Test
+    fun `benchmark test`() {
+        val recursionLimit = 1000_000_000L
+        fun deepRecursionTrampolined(a: Long): TCResult<Long, Unit> {
+            return if (a == recursionLimit) {
+                println("deepRecursionTrampolined passes $a recursive calls").ret()
+            } else ::deepRecursionTrampolined applyTo a + 1
+        }
+
+        val trampolineMillis = measureTimeMillis { deepRecursionTrampolined(1)() }
+        println("Trampolined version is executed for $trampolineMillis milliseconds")
+
+        tailrec fun deepRecursionTailrec(a: Long): Unit =
+                if (a == recursionLimit) {
+                    println("deepRecursionTailrec passes $a recursive calls")
+                } else deepRecursionTailrec(a + 1)
+
+        val tailrecMillis = measureTimeMillis { deepRecursionTailrec(1) }
+        println("Tailrec version is executed for $tailrecMillis milliseconds")
+        println("Tailrec version is ${trampolineMillis / tailrecMillis} times faster than trampolined one")
     }
-
-    val trampolineMillis = measureTimeMillis { deepRecursionTrampolined(1)() }
-    println("Trampolined version is executed for $trampolineMillis milliseconds")
-
-    tailrec fun deepRecursionTailrec(a: Long): Unit =
-            if (a == recursionLimit) {
-                println("deepRecursionTailrec passes $a recursive calls")
-            } else deepRecursionTailrec(a + 1)
-
-    val tailrecMillis = measureTimeMillis { deepRecursionTailrec(1) }
-    println("Tailrec version is executed for $tailrecMillis milliseconds")
 }

@@ -9,8 +9,13 @@ typealias TCFunction<A, B> = (A) -> TCResult<A, B>
 sealed class TCResult<A, out B> : () -> B
 
 private class Call<A, out B>(private val a: A, private val nextStep: TCFunction<A, B>) : TCResult<A, B>() {
-    override fun invoke(): B = generateSequence(nextStep(a)) { (it as? Call<A, B>)?.nextStep?.invoke(it.a) ?: it }
-            .first({ it is Ret<A, B> })()
+    override fun invoke(): B {
+        var step = nextStep(a)
+        while (step is Call<A, B>) {
+            step = step.nextStep(step.a)
+        }
+        return step()
+    }
 }
 
 private class Ret<A, out B>(private val b: B) : TCResult<A, B>() {
