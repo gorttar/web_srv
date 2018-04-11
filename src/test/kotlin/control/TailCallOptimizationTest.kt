@@ -8,13 +8,32 @@ import kotlin.system.measureTimeMillis
 /**
  * @author Andrey Antipov (gorttar@gmail.com) (2018-04-09)
  */
-private fun evenM(n: Int): TCResult<Int, Boolean> = if (n == 0) true.ret() else ::oddM applyTo n - 1
+private fun evenM(n: Int): TCResult<Int, Boolean> = if (n == 0) true.ret() else ::oddM callOn n - 1
 
-private fun oddM(n: Int): TCResult<Int, Boolean> = if (n == 0) false.ret() else ::evenM applyTo n - 1
+private fun oddM(n: Int): TCResult<Int, Boolean> = if (n == 0) false.ret() else ::evenM callOn n - 1
 
-private val evenF: TCFunction<Int, Boolean> = { n -> if (n == 0) true.ret() else oddF applyTo n - 1 }
+private val evenF: TCFunction<Int, Boolean> = { n -> if (n == 0) true.ret() else oddF callOn n - 1 }
 
-private val oddF: TCFunction<Int, Boolean> = { n -> if (n == 0) false.ret() else evenF applyTo n - 1 }
+private val oddF: TCFunction<Int, Boolean> = { n -> if (n == 0) false.ret() else evenF callOn n - 1 }
+
+private const val recursionLimit = 1000_000_000L
+private val deepRecursionTrampolinedF: TCFunction<Long, Unit> = {
+    if (it == recursionLimit) {
+        println("deepRecursionTrampolinedF passes $it recursive calls").ret()
+    } else {
+        deepRecursionTrampolinedFAlias callOn it + 1
+    }
+}
+private val deepRecursionTrampolinedFAlias: TCFunction<Long, Unit> = deepRecursionTrampolinedF
+
+private fun deepRecursionTrampolinedM(it: Long): TCResult<Long, Unit> =
+        if (it == recursionLimit) {
+            println("deepRecursionTrampolinedF passes $it recursive calls").ret()
+        } else {
+            deepRecursionTrampolinedMAlias callOn it + 1
+        }
+
+private val deepRecursionTrampolinedMAlias: TCFunction<Long, Unit> = ::deepRecursionTrampolinedM
 
 class TailCallOptimizationTest {
     @DataProvider
@@ -42,25 +61,6 @@ class TailCallOptimizationTest {
 
     @Test(dataProvider = "data for \"odd\" tests")
     fun `"oddF" should work properly for positive numbers`(n: Int, expected: Boolean) = assertEquals(oddF(n)(), expected)
-
-    private val recursionLimit = 1000_000_000L
-    private val deepRecursionTrampolinedF: TCFunction<Long, Unit> = {
-        if (it == recursionLimit) {
-            println("deepRecursionTrampolinedF passes $it recursive calls").ret()
-        } else {
-            deepRecursionTrampolinedFAlias applyTo it + 1
-        }
-    }
-    private val deepRecursionTrampolinedFAlias: TCFunction<Long, Unit> = deepRecursionTrampolinedF
-
-    private fun deepRecursionTrampolinedM(it: Long): TCResult<Long, Unit> =
-            if (it == recursionLimit) {
-                println("deepRecursionTrampolinedF passes $it recursive calls").ret()
-            } else {
-                deepRecursionTrampolinedMAlias applyTo it + 1
-            }
-
-    private val deepRecursionTrampolinedMAlias: TCFunction<Long, Unit> = ::deepRecursionTrampolinedM
 
     @Test
     fun `benchmark test`() {
