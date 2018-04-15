@@ -8,20 +8,20 @@ import kotlin.system.measureTimeMillis
 /**
  * @author Andrey Antipov (gorttar@gmail.com) (2018-04-09)
  */
-private fun evenM(n: Int): TCResult<Int, Boolean> = if (n == 0) true.ret() else ::oddM callOn n - 1
+private fun evenM(n: Int): TCResult<Int, Boolean> = if (n == 0) true.ret() else ::oddM `^to` n - 1
 
-private fun oddM(n: Int): TCResult<Int, Boolean> = if (n == 0) false.ret() else ::evenM callOn n - 1
+private fun oddM(n: Int): TCResult<Int, Boolean> = if (n == 0) false.ret() else ::evenM `^to` n - 1
 
-private val evenF: TCFunction<Int, Boolean> = { n -> if (n == 0) true.ret() else oddF callOn n - 1 }
+private val evenF: TCFunction<Int, Boolean> = { n -> if (n == 0) true.ret() else oddF `^to` n - 1 }
 
-private val oddF: TCFunction<Int, Boolean> = { n -> if (n == 0) false.ret() else evenF callOn n - 1 }
+private val oddF: TCFunction<Int, Boolean> = { n -> if (n == 0) false.ret() else evenF `^to` n - 1 }
 
 private const val recursionLimit = 1000_000_000L
 private val deepRecursionTrampolinedF: TCFunction<Long, Unit> = {
     if (it == recursionLimit) {
         println("deepRecursionTrampolinedF passes $it recursive calls").ret()
     } else {
-        deepRecursionTrampolinedFAlias callOn it + 1
+        deepRecursionTrampolinedFAlias `^to` it + 1
     }
 }
 private val deepRecursionTrampolinedFAlias: TCFunction<Long, Unit> = deepRecursionTrampolinedF
@@ -30,7 +30,7 @@ private fun deepRecursionTrampolinedM(it: Long): TCResult<Long, Unit> =
         if (it == recursionLimit) {
             println("deepRecursionTrampolinedF passes $it recursive calls").ret()
         } else {
-            deepRecursionTrampolinedMAlias callOn it + 1
+            deepRecursionTrampolinedMAlias `^to` it + 1
         }
 
 private val deepRecursionTrampolinedMAlias: TCFunction<Long, Unit> = ::deepRecursionTrampolinedM
@@ -46,10 +46,12 @@ class TailCallOptimizationTest {
             arrayOf(9_999_999, false))
 
     @Test(dataProvider = "data for \"even\" tests")
-    fun `"evenM" should work properly for positive numbers`(n: Int, expected: Boolean) = assertEquals(evenM(n)(), expected)
+    fun `"evenM" should work properly for positive numbers`(n: Int, expected: Boolean) =
+            assertEquals(evenM(n)(), expected)
 
     @Test(dataProvider = "data for \"even\" tests")
-    fun `"evenF" should work properly for positive numbers`(n: Int, expected: Boolean) = assertEquals(evenF(n)(), expected)
+    fun `"evenF" should work properly for positive numbers`(n: Int, expected: Boolean) =
+            assertEquals(evenF(n)(), expected)
 
     @DataProvider
     fun `data for "odd" tests`() = `data for "even" tests`()
@@ -57,12 +59,14 @@ class TailCallOptimizationTest {
             .toTypedArray()
 
     @Test(dataProvider = "data for \"odd\" tests")
-    fun `"oddM" should work properly for positive numbers`(n: Int, expected: Boolean) = assertEquals(oddM(n)(), expected)
+    fun `"oddM" should work properly for positive numbers`(n: Int, expected: Boolean) =
+            assertEquals(oddM(n)(), expected)
 
     @Test(dataProvider = "data for \"odd\" tests")
-    fun `"oddF" should work properly for positive numbers`(n: Int, expected: Boolean) = assertEquals(oddF(n)(), expected)
+    fun `"oddF" should work properly for positive numbers`(n: Int, expected: Boolean) =
+            assertEquals(oddF(n)(), expected)
 
-    @Test
+    @Test(enabled = false)
     fun `benchmark test`() {
         val trampolineFMillis = measureTimeMillis { deepRecursionTrampolinedF(1)() }
         println("Trampolined function based version is executed for $trampolineFMillis milliseconds")
@@ -74,6 +78,7 @@ class TailCallOptimizationTest {
                 if (a == recursionLimit) {
                     println("deepRecursionTailrec passes $a recursive calls")
                 } else deepRecursionTailrec(a + 1)
+
         val tailrecMillis = measureTimeMillis { deepRecursionTailrec(1) }
         println("Tailrec version is executed for $tailrecMillis milliseconds")
         println("Tailrec version is ${trampolineFMillis.toDouble() / tailrecMillis} times faster than trampolined function based one")

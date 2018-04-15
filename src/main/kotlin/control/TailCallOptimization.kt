@@ -10,18 +10,20 @@ sealed class TCResult<A, out B> : () -> B
 
 private class Call<A, out B>(private val a: A, private val nextStep: TCFunction<A, B>) : TCResult<A, B>() {
     override fun invoke(): B {
-        var step = nextStep(a)
+        var step = next()
         while (step is Call<A, B>) {
-            step = step.nextStep(step.a)
+            step = step.next()
         }
         return step()
     }
+
+    private fun next(): TCResult<A, B> = nextStep(a)
 }
 
 private class Ret<A, out B>(private val b: B) : TCResult<A, B>() {
     override fun invoke(): B = b
 }
 
-infix fun <A, B> TCFunction<A, B>.callOn(a: A): TCResult<A, B> = Call(a, this)
+infix fun <A, B> TCFunction<A, B>.`^to`(a: A): TCResult<A, B> = Call(a, this)
 
 fun <A, B> B.ret(): TCResult<A, B> = Ret(this)
