@@ -24,6 +24,6 @@ private class Ret<A, out B>(private val b: B) : TCResult<A, B>() {
     override fun invoke(): B = b
 }
 
-infix fun <A, B> TCFunction<A, B>.`^to`(a: A): TCResult<A, B> = Call(a, this)
+infix fun <A, B> TCFunction<A, B>.ap(a: A): TCResult<A, B> = Call(a, this)
 
 fun <A, B> B.ret(): TCResult<A, B> = Ret(this)

@@ -8,20 +8,20 @@ import kotlin.system.measureTimeMillis
 /**
  * @author Andrey Antipov (gorttar@gmail.com) (2018-04-09)
  */
-private fun evenM(n: Int): TCResult<Int, Boolean> = if (n == 0) true.ret() else ::oddM `^to` n - 1
+private fun evenM(n: Int): TCResult<Int, Boolean> = if (n == 0) true.ret() else ::oddM ap n - 1
 
-private fun oddM(n: Int): TCResult<Int, Boolean> = if (n == 0) false.ret() else ::evenM `^to` n - 1
+private fun oddM(n: Int): TCResult<Int, Boolean> = if (n == 0) false.ret() else ::evenM ap n - 1
 
-private val evenF: TCFunction<Int, Boolean> = { n -> if (n == 0) true.ret() else oddF `^to` n - 1 }
+private val evenF: TCFunction<Int, Boolean> = { n -> if (n == 0) true.ret() else oddF ap n - 1 }
 
-private val oddF: TCFunction<Int, Boolean> = { n -> if (n == 0) false.ret() else evenF `^to` n - 1 }
+private val oddF: TCFunction<Int, Boolean> = { n -> if (n == 0) false.ret() else evenF ap n - 1 }
 
 private const val recursionLimit = 1000_000_000L
 private val deepRecursionTrampolinedF: TCFunction<Long, Unit> = {
     if (it == recursionLimit) {
         println("deepRecursionTrampolinedF passes $it recursive calls").ret()
     } else {
-        deepRecursionTrampolinedFAlias `^to` it + 1
+        deepRecursionTrampolinedFAlias ap it + 1
     }
 }
 private val deepRecursionTrampolinedFAlias: TCFunction<Long, Unit> = deepRecursionTrampolinedF
@@ -30,7 +30,7 @@ private fun deepRecursionTrampolinedM(it: Long): TCResult<Long, Unit> =
         if (it == recursionLimit) {
             println("deepRecursionTrampolinedF passes $it recursive calls").ret()
         } else {
-            deepRecursionTrampolinedMAlias `^to` it + 1
+            deepRecursionTrampolinedMAlias ap it + 1
         }
 
 private val deepRecursionTrampolinedMAlias: TCFunction<Long, Unit> = ::deepRecursionTrampolinedM
